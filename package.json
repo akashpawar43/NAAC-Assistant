@@ -1,0 +1,16 @@
+{
+  "name": "naac-assistant",
+  "private": true,
+  "description": "Convenience scripts only. server/ and client/ are independent npm projects with their own lockfiles.",
+  "scripts": {
+    "setup": "npm ci --prefix server && npm ci --prefix client",
+    "dev": "npm run dev --prefix server",
+    "dev:client": "npm run dev --prefix client",
+    "build": "npm run build --prefix client && npm run build --prefix server",
+    "start": "npm run start --prefix server",
+    "test": "npm test --prefix server",
+    "import-frameworks": "npm run import-frameworks --prefix server --",
+    "typecheck": "npm run typecheck --prefix server && npm run typecheck --prefix client",
+    "check": "npm run typecheck && npm test && npm run build --prefix client"
+  }
+}
