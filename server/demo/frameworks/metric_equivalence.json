@@ -1,0 +1,4 @@
+[
+  { "a": ["demo_college", "3.4.5"], "b": ["demo_other", "3.4.3"], "score": 95 },
+  { "a": ["demo_college", "5.2.1"], "b": ["demo_records", "5.2.1"], "score": 90 }
+]

@@ -1,0 +1,320 @@
+# A made-up framework for trying the app and for the server's tests. It is NOT a NAAC framework:
+# titles, explanations, weights, score bands and templates are invented. It only follows the
+# framework file format, and has one metric of each kind the app supports.
+#
+# Load it into a local database:  npm run import-frameworks -- server/demo/frameworks
+
+id: demo_college
+name: Demo framework - College (not a NAAC framework)
+version: "1.0"
+applies_to: [AQAR, SSR]
+institution_types: []
+verified: false
+
+inputs:
+  - {key: students_enrolled, label: Students on roll, per_year: true}
+  - {key: outgoing_students, label: Students in their final year, per_year: true}
+  - {key: teachers_fulltime, label: Full-time teachers, per_year: true}
+  - {key: classrooms_seminar_halls, label: Rooms used for teaching, per_year: false}
+  - {key: computers_for_students, label: Computers students can use, per_year: false}
+
+_cols:
+  year: &year {key: academic_year, label: Academic year, type: year, required: true}
+
+checklist:
+  - {rule: no_data, severity: high, message: Nothing entered yet.}
+  - {rule: missing_evidence, severity: high, message: A required document is not uploaded.}
+  - {rule: missing_years, severity: medium, message: Some years of the report have no rows.}
+  - {rule: below_band, min_points: 2, severity: medium, message: The value scores low (indicative).}
+  - {rule: drop_vs_previous, min_drop_pct: 10, severity: low, message: The value fell since the previous report.}
+  - {rule: narrative_short, severity: medium, message: The answer is shorter than suggested.}
+  - {rule: narrative_too_long, severity: low, message: The answer is over the word limit.}
+
+narrative_templates:
+  default: "{{ fields.response }}\n"
+  best_practice: "Practice: {{ fields.title }}\n\nGoals: {{ fields.objectives }}\n\nSetting: {{ fields.context }}\n\n\
+    What we do: {{ fields.practice }}\n\nResults: {{ fields.evidence }}{% if facts %}\nFrom our data: {% for f in facts %}{{ f }}\
+    {% if not loop.last %}; {% endif %}{% endfor %}.{% endif %}\n\nChallenges: {{ fields.problems }}\n\nNotes: {{ fields.notes }}\n"
+  distinctive: "{{ fields.area }}\n\n{{ fields.description }}\n"
+
+criteria:
+  - id: "1"
+    title: Courses
+    key_indicators:
+      - id: "1.2"
+        title: Course offerings
+        weight: 60
+        metrics:
+          - id: "1.2.1"
+            type: quantitative
+            title: Short courses offered (count)
+            explain: List each short course the college ran. The value is how many there were.
+            template:
+              columns:
+                - *year
+                - {key: course, label: Course name, type: text, required: true}
+                - {key: students, label: Students who joined, type: int, min: 0}
+            formula: {op: count}
+            evidence:
+              - {key: course_list, label: List of courses}
+      - id: "1.4"
+        title: Feedback
+        weight: 40
+        metrics:
+          - id: "1.4.1"
+            type: checklist
+            title: Groups asked for feedback on courses
+            explain: Tick each group the college asked for feedback.
+            items:
+              - {key: students, label: Students}
+              - {key: teachers, label: Teachers}
+              - {key: employers, label: Employers}
+              - {key: alumni, label: "Alumni, including former staff"}
+            formula: {op: checked}
+            bands:
+              - {min: 4, points: 4}
+              - {min: 3, points: 3}
+              - {min: 2, points: 2}
+              - {min: 1, points: 1}
+            evidence:
+              - {key: feedback_forms, label: Sample feedback forms}
+          - id: "1.4.2"
+            type: choice
+            title: What happens to the feedback
+            explain: Pick the option that describes what the college does with feedback.
+            options:
+              - {key: A, label: "Analysed, acted on and published", points: 4}
+              - {key: B, label: Analysed and acted on, points: 3}
+              - {key: C, label: Analysed only, points: 2}
+              - {key: D, label: Collected only, points: 1}
+              - {key: E, label: Not collected, points: 0}
+            formula: {op: choice, field: option}
+            evidence:
+              - {key: action_report, label: Action taken report, required: false}
+
+  - id: "2"
+    title: Teaching
+    key_indicators:
+      - id: "2.2"
+        title: Class sizes
+        weight: 150
+        metrics:
+          - id: "2.2.1"
+            type: quantitative
+            title: Students per full-time teacher
+            explain: Calculated from the profile (students on roll and full-time teachers, latest year). Lower is better.
+            template: {columns: []}
+            formula: {op: div, args: [{op: input, key: students_enrolled, year: latest}, {op: input, key: teachers_fulltime, year: latest}]}
+            unit: ": 1"
+            lower_is_better: true
+            bands:
+              - {max: 18, points: 4}
+              - {max: 28, points: 3}
+              - {max: 38, points: 2}
+              - {max: 48, points: 1}
+            evidence: []
+      - id: "2.7"
+        title: Student survey
+        weight: 100
+        metrics:
+          - id: "2.7.1"
+            type: external
+            title: Survey of students, run by the assessing body
+            explain: The assessing body runs this survey itself. There is nothing to enter.
+            evidence:
+              - {key: student_list, label: List of students with contact details}
+
+  - id: "3"
+    title: Research
+    key_indicators:
+      - id: "3.1"
+        title: Grants
+        weight: 100
+        metrics:
+          - id: "3.1.1"
+            type: quantitative
+            title: Research grants received (INR lakhs)
+            explain: One row per grant. The value is the total amount over the report's years.
+            template:
+              columns:
+                - *year
+                - {key: project, label: Project, type: text, required: true}
+                - {key: investigator, label: Lead investigator, type: text}
+                - {key: agency, label: Funded by, type: text}
+                - {key: agency_type, label: Funder type, type: enum, options: [Government, Non-government]}
+                - {key: amount_lakhs, label: Amount (INR lakhs), type: number, required: true, min: 0}
+            formula: {op: sum, field: amount_lakhs}
+            unit: INR lakhs
+            evidence:
+              - {key: sanction_letters, label: Grant letters}
+      - id: "3.3"
+        title: Papers
+        weight: 100
+        metrics:
+          - id: "3.3.1"
+            type: quantitative
+            title: Reviewed papers per teacher
+            explain: One row per paper. Papers marked as reviewed are divided by the average number of full-time teachers.
+            template:
+              columns:
+                - *year
+                - {key: title, label: Paper title, type: text, required: true}
+                - {key: authors, label: Authors, type: text, required: true}
+                - {key: journal, label: Journal, type: text, required: true}
+                - {key: ugc_care, label: Peer reviewed, type: enum, options: ["Yes", "No"], required: true}
+            formula: {op: div, args: [{op: count, where: {field: ugc_care, eq: true}}, {op: input, key: teachers_fulltime, year: avg}]}
+            unit: per teacher
+            bands:
+              - {min: 2, points: 4}
+              - {min: 1, points: 3}
+              - {min: 0.5, points: 2}
+              - {min: 0.1, points: 1}
+            evidence:
+              - {key: paper_list, label: List of papers with links}
+      - id: "3.4"
+        title: Patents
+        weight: 50
+        metrics:
+          - id: "3.4.5"
+            type: quantitative
+            title: Patents filed (count)
+            explain: One row per patent application.
+            template:
+              columns:
+                - *year
+                - {key: patent, label: Patent title, type: text, required: true}
+            formula: {op: count}
+            evidence:
+              - {key: patent_proof, label: Filing receipts}
+
+  - id: "4"
+    title: Facilities
+    key_indicators:
+      - id: "4.3"
+        title: Computers
+        weight: 100
+        metrics:
+          - id: "4.3.2"
+            type: quantitative
+            title: Students per computer
+            explain: Calculated from the profile (students on roll, latest year, and computers students can use). Lower is better.
+            template: {columns: []}
+            formula: {op: div, args: [{op: input, key: students_enrolled, year: latest}, {op: input, key: computers_for_students}]}
+            unit: ": 1"
+            lower_is_better: true
+            bands:
+              - {max: 8, points: 4}
+              - {max: 15, points: 3}
+              - {max: 25, points: 2}
+              - {max: 40, points: 1}
+            evidence:
+              - {key: stock_register, label: Computer stock register}
+
+  - id: "5"
+    title: Students
+    key_indicators:
+      - id: "5.2"
+        title: After graduation
+        weight: 100
+        metrics:
+          - id: "5.2.1"
+            type: quantitative
+            title: Placement and progression to higher studies (percentage of final-year students)
+            explain: One row per student who got a job or joined further study. Each year's count is divided by that year's final-year students; the value is the average over the years.
+            template:
+              columns:
+                - *year
+                - {key: student, label: Student, type: text, required: true}
+                - {key: programme, label: Programme, type: text}
+                - {key: outcome, label: Outcome, type: enum, options: [Placed, Higher education], required: true}
+                - {key: employer_or_institution, label: Joined (employer or institution), type: text, required: true}
+                - {key: package_lpa, label: Salary package (LPA), type: number, min: 0}
+              unique: [academic_year, student]
+            formula:
+              op: per_year
+              agg: avg
+              of: {op: mul, args: [{op: div, args: [{op: count}, {op: input, key: outgoing_students}]}, {op: const, value: 100}]}
+            unit: "%"
+            bands:
+              - {min: 60, points: 4}
+              - {min: 45, points: 3}
+              - {min: 30, points: 2}
+              - {min: 10, points: 1}
+            evidence:
+              - {key: data_template, label: Placement list (Excel)}
+              - {key: offer_letters, label: Offer or admission letters}
+      - id: "5.4"
+        title: Alumni
+        weight: 50
+        metrics:
+          - id: "5.4.1"
+            type: qualitative
+            title: How alumni help the college
+            explain: Describe what former students do for the college.
+            narrative:
+              template: default
+              word_limit: 300
+              min_words: 50
+              fields:
+                - {key: response, label: Answer, type: longtext, required: true}
+            evidence: []
+
+  - id: "6"
+    title: Running the college
+    key_indicators:
+      - id: "6.2"
+        title: Planning
+        weight: 50
+        metrics:
+          - id: "6.2.1"
+            type: qualitative
+            title: How the college plans ahead
+            explain: Describe how plans are made and checked.
+            narrative:
+              template: default
+              word_limit: 300
+              min_words: 50
+              fields:
+                - {key: response, label: Answer, type: longtext, required: true}
+            evidence: []
+
+  - id: "7"
+    title: Values and practices
+    key_indicators:
+      - id: "7.2"
+        title: Best practices
+        weight: 60
+        metrics:
+          - id: "7.2.1"
+            type: qualitative
+            title: Two practices that work well
+            explain: Describe each practice in the seven parts below.
+            narrative:
+              template: best_practice
+              word_limit: 1000
+              min_words: 400
+              fields:
+                - {key: title, label: Name of the practice, type: text, required: true}
+                - {key: objectives, label: Objectives, type: longtext, required: true}
+                - {key: context, label: Setting, type: longtext, required: true}
+                - {key: practice, label: What we do, type: longtext, required: true}
+                - {key: evidence, label: Results, type: longtext, required: true}
+                - {key: problems, label: Challenges, type: longtext, required: true}
+                - {key: notes, label: Notes, type: longtext}
+            evidence: []
+      - id: "7.3"
+        title: What sets the college apart
+        weight: 40
+        metrics:
+          - id: "7.3.1"
+            type: qualitative
+            title: One area the college is known for
+            explain: Name the area and describe it.
+            narrative:
+              template: distinctive
+              word_limit: 500
+              min_words: 100
+              fields:
+                - {key: area, label: Area, type: text, required: true}
+                - {key: description, label: Description, type: longtext, required: true}
+            evidence: []

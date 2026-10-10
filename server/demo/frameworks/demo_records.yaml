@@ -1,0 +1,236 @@
+# A made-up framework for trying the app and for the server's tests. It is NOT a NAAC framework.
+# Its metrics are entered as records laid out like a data-template workbook (naac_sheet): yearly
+# blocks, two-row headers, two tables on one sheet, numbered rows, and one metric calculated from
+# another metric's records. Sheet names, headers, weights and bands are invented.
+
+id: demo_records
+name: Demo framework - Records (not a NAAC framework)
+version: "1.0"
+applies_to: [AQAR, SSR]
+institution_types: []
+verified: false
+
+inputs:
+  - {key: students, label: Students on roll, per_year: true}
+  - {key: outgoing, label: Students in their final year, per_year: true}
+  - {key: teachers_unique, label: Teachers over the whole report (each counted once), per_year: false}
+
+_cols:
+  year: &year {key: academic_year, label: Academic year, type: year, required: true}
+
+checklist:
+  - {rule: no_data, severity: high, message: Nothing entered yet.}
+  - {rule: missing_evidence, severity: high, message: A required document is not uploaded.}
+  - {rule: below_band, min_points: 2, severity: medium, message: The value scores low (indicative).}
+
+narrative_templates: {}
+
+criteria:
+  - id: "2"
+    title: Teaching
+    key_indicators:
+      - id: "2.1"
+        title: Admissions
+        weight: 120
+        metrics:
+          - id: "2.1.1"
+            type: quantitative
+            title: Seats filled (percentage)
+            explain: One row per programme and year. The value is students admitted out of seats sanctioned.
+            template:
+              columns:
+                - *year
+                - {key: programme, label: Programme, type: text, required: true}
+                - {key: programme_code, label: Code, type: text}
+                - {key: seats_sanctioned, label: Seats sanctioned, type: int, required: true, min: 0}
+                - {key: admitted, label: Students admitted, type: int, required: true, min: 0}
+                - {key: earmarked_sc, label: Seats reserved - SC, type: int, min: 0}
+                - {key: earmarked_st, label: Seats reserved - ST, type: int, min: 0}
+                - {key: earmarked_obc, label: Seats reserved - OBC, type: int, min: 0}
+                - {key: earmarked_other, label: Seats reserved - other, type: int, min: 0}
+                - {key: admitted_sc, label: Reserved seats filled - SC, type: int, min: 0}
+                - {key: admitted_st, label: Reserved seats filled - ST, type: int, min: 0}
+                - {key: admitted_obc, label: Reserved seats filled - OBC, type: int, min: 0}
+                - {key: admitted_other, label: Reserved seats filled - other, type: int, min: 0}
+            naac_sheet:
+              sheet: Admissions
+              title: ["Admissions by programme, with reserved seats"]
+              by_year: true
+              tables:
+                - columns:
+                    - {key: programme, header: Programme}
+                    - {key: programme_code, header: Code}
+                    - {key: seats_sanctioned, header: Seats sanctioned}
+                    - {key: admitted, header: Students admitted}
+                    - {key: earmarked_sc, header: SC, group: Seats reserved}
+                    - {key: earmarked_st, header: ST, group: Seats reserved}
+                    - {key: earmarked_obc, header: OBC, group: Seats reserved}
+                    - {key: earmarked_other, header: Other, group: Seats reserved}
+                    - {key: admitted_sc, header: SC, group: Reserved seats filled}
+                    - {key: admitted_st, header: ST, group: Reserved seats filled}
+                    - {key: admitted_obc, header: OBC, group: Reserved seats filled}
+                    - {key: admitted_other, header: Other, group: Reserved seats filled}
+            formula: {op: mul, args: [{op: div, args: [{op: sum, field: admitted}, {op: sum, field: seats_sanctioned}]}, {op: const, value: 100}]}
+            unit: "%"
+            bands:
+              - {min: 85, points: 4}
+              - {min: 70, points: 3}
+              - {min: 50, points: 2}
+              - {min: 30, points: 1}
+            evidence:
+              - {key: admission_list, label: Admission list}
+          - id: "2.1.2"
+            type: quantitative
+            title: Reserved seats filled (percentage)
+            explain: Calculated from the records entered under 2.1.1; nothing to enter here.
+            data_from: "2.1.1"
+            template: {columns: []}
+            formula:
+              op: mul
+              args:
+                - op: div
+                  args:
+                    - {op: add, args: [{op: add, args: [{op: sum, field: admitted_sc}, {op: sum, field: admitted_st}]}, {op: add, args: [{op: sum, field: admitted_obc}, {op: sum, field: admitted_other}]}]}
+                    - {op: add, args: [{op: add, args: [{op: sum, field: earmarked_sc}, {op: sum, field: earmarked_st}]}, {op: add, args: [{op: sum, field: earmarked_obc}, {op: sum, field: earmarked_other}]}]}
+                - {op: const, value: 100}
+            unit: "%"
+            bands:
+              - {min: 75, points: 4}
+              - {min: 60, points: 3}
+              - {min: 45, points: 2}
+              - {min: 30, points: 1}
+            evidence: []
+      - id: "2.4"
+        title: Teachers
+        weight: 80
+        metrics:
+          - id: "2.4.2"
+            type: quantitative
+            title: Teachers with a doctorate or a teaching eligibility test (percentage)
+            explain: One row per teacher, working now or left. The value is the share with Ph.D., NET or SET.
+            template:
+              columns:
+                - {key: serving, label: Working now or left, type: enum, options: [Presently working, Left the institution], required: true}
+                - {key: name, label: Name, type: text, required: true}
+                - {key: staff_id, label: Staff ID, type: text}
+                - {key: designation, label: Designation, type: text}
+                - {key: joined, label: Date joined, type: date}
+                - {key: left, label: Date left, type: date}
+                - {key: department, label: Department, type: text}
+                - {key: qualification, label: Highest qualification, type: enum, options: [Ph.D., NET, SET, Other], required: true}
+            naac_sheet:
+              sheet: Teachers
+              title: [Teachers during the report's years]
+              tables:
+                - caption: Teachers working now
+                  where: {field: serving, eq: Presently working}
+                  columns:
+                    - {key: name, header: Name}
+                    - {key: staff_id, header: Staff ID}
+                    - {key: designation, header: Designation}
+                    - {key: joined, header: Joined}
+                    - {key: department, header: Department}
+                    - {key: qualification, header: Highest qualification}
+                - caption: Teachers who have left
+                  where: {field: serving, eq: Left the institution}
+                  columns:
+                    - {key: name, header: Name}
+                    - {key: staff_id, header: Staff ID}
+                    - {key: designation, header: Designation}
+                    - {key: joined, header: Joined}
+                    - {key: left, header: Left}
+                    - {key: department, header: Department}
+                    - {key: qualification, header: Highest qualification}
+            formula: {op: mul, args: [{op: div, args: [{op: count, where: {field: qualification, in: [Ph.D., NET, SET]}}, {op: count}]}, {op: const, value: 100}]}
+            unit: "%"
+            bands:
+              - {min: 70, points: 4}
+              - {min: 55, points: 3}
+              - {min: 40, points: 2}
+              - {min: 20, points: 1}
+            evidence:
+              - {key: teacher_list, label: List of teachers}
+
+  - id: "3"
+    title: Research
+    key_indicators:
+      - id: "3.3"
+        title: Publications
+        weight: 100
+        metrics:
+          - id: "3.3.2"
+            type: quantitative
+            title: Books and chapters per teacher
+            explain: One row per book or chapter, divided by the teachers over the whole report.
+            template:
+              columns:
+                - {key: teacher, label: Teacher, type: text, required: true}
+                - {key: book_title, label: Book title, type: text}
+                - {key: paper_title, label: Chapter title, type: text}
+                - {key: level, label: Level, type: enum, options: [National, International]}
+            naac_sheet:
+              sheet: Books
+              title: [Books and chapters by teachers]
+              tables:
+                - columns:
+                    - {header: No., serial: true}
+                    - {key: teacher, header: Teacher}
+                    - {key: book_title, header: Book}
+                    - {key: paper_title, header: Chapter}
+                    - {key: level, header: Level}
+            formula: {op: div, args: [{op: count}, {op: input, key: teachers_unique}]}
+            unit: per teacher
+            evidence:
+              - {key: book_covers, label: Cover pages}
+
+  - id: "5"
+    title: Students
+    key_indicators:
+      - id: "5.2"
+        title: After graduation
+        weight: 100
+        metrics:
+          - id: "5.2.1"
+            type: quantitative
+            title: Placement and progression to higher studies (percentage)
+            explain: One row per student placed or admitted to further study, divided by final-year students over the report.
+            template:
+              columns:
+                - {key: kind, label: Placed or higher studies, type: enum, options: [Placed, Higher education], required: true}
+                - *year
+                - {key: student, label: Student, type: text, required: true}
+                - {key: programme, label: Programme, type: text}
+                - {key: graduation_year, label: Year of graduation, type: text}
+                - {key: employer, label: Employer, type: text}
+                - {key: package, label: Package, type: number, min: 0}
+                - {key: institution, label: Institution joined, type: text}
+                - {key: admitted_programme, label: Programme joined, type: text}
+            naac_sheet:
+              sheet: Progression
+              title: [Students placed or admitted to further study]
+              tables:
+                - where: {field: kind, eq: Placed}
+                  columns:
+                    - {key: academic_year, header: Year}
+                    - {key: student, header: Student}
+                    - {key: programme, header: Programme}
+                    - {key: graduation_year, header: Graduated}
+                    - {key: employer, header: Employer}
+                    - {key: package, header: Package}
+                - where: {field: kind, eq: Higher education}
+                  columns:
+                    - {key: academic_year, header: Year}
+                    - {key: student, header: Student}
+                    - {key: programme, header: Programme}
+                    - {key: graduation_year, header: Graduated}
+                    - {key: institution, header: Institution}
+                    - {key: admitted_programme, header: Programme joined}
+            formula: {op: mul, args: [{op: div, args: [{op: count}, {op: mul, args: [{op: input, key: outgoing, year: avg}, {op: years}]}]}, {op: const, value: 100}]}
+            unit: "%"
+            bands:
+              - {min: 60, points: 4}
+              - {min: 45, points: 3}
+              - {min: 30, points: 2}
+              - {min: 10, points: 1}
+            evidence:
+              - {key: progression_list, label: Placement and admission list}

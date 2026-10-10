@@ -1,0 +1,31 @@
+# Searchable FAQ shown in "Search NAAC". Keep answers short and factual; cite the source.
+# Verify every answer against the current NAAC manual before a pilot.
+- q: What is the difference between the SSR and the AQAR?
+  a: The Self-Study Report (SSR) is submitted once per accreditation cycle and covers the last five academic years. The Annual Quality Assurance Report (AQAR) is submitted by the IQAC every year after accreditation and covers one academic year. Both use the same criteria and most of the same metric IDs.
+  source: NAAC manual (general)
+- q: What are quantitative (QnM) and qualitative (QlM) metrics?
+  a: Quantitative metrics are calculated from data you enter (counts, percentages, ratios) and are checked against documents during data validation. Qualitative metrics are written descriptions judged by the peer team. In this app, quantitative metrics have a data table and a computed value; qualitative metrics have guided narrative fields.
+  source: NAAC manual (general)
+- q: What is the extended profile?
+  a: Basic numbers of the institution (students, teachers, programmes, courses, expenditure, classrooms, computers) that many metric formulas divide by. Fill it first on the Extended profile page; without it, percentage metrics cannot be calculated.
+- q: Why does my metric show "no value"?
+  a: The formula needs data that is missing. The message next to the value names what is missing, for example an extended-profile number for a specific academic year, or rows for a year. Division by zero (for example zero teachers) also gives no value instead of a wrong number.
+- q: How is the score band calculated?
+  a: Score bands in this app are indicative only. NAAC grades quantitative metrics against its own benchmarks, which are not published in full. Use the band to spot weak metrics, not as a prediction of your grade.
+- q: What documents should be uploaded as evidence?
+  a: Each metric lists the documents it expects (data template, sanction letters, certificates, reports, geotagged photographs, and so on). Upload them on the metric page. Missing required documents are flagged in the review checklist.
+- q: What is DVV?
+  a: Data Validation and Verification. After SSR submission, NAAC checks the quantitative metric data against the documents you uploaded. Clarifications are asked when numbers and proofs do not match, so keep every value traceable to a document.
+  source: NAAC manual (general)
+- q: What is the Student Satisfaction Survey?
+  a: An online survey NAAC runs directly with your currently enrolled students (metric 2.7.1). The college provides the student database; there is nothing to calculate in this app.
+  metric_id: "2.7.1"
+- q: How should best practices be written?
+  a: NAAC asks for two best practices in a fixed format - title, objectives, context, the practice, evidence of success, problems encountered and resources required, and optional notes. Use the guided fields on metric 7.2.1; the draft preview joins them in this order and can add your own computed figures as evidence.
+  metric_id: "7.2.1"
+- q: Who can enter data?
+  a: The IQAC admin can change everything, invite members and assign metrics. A department editor can change only metrics assigned to them. A viewer can only read.
+- q: Can last year's data be reused?
+  a: Yes. When creating a new cycle, choose the previous cycle; then use Carry forward. Narratives, checklist and choice answers, and non-yearly extended-profile values are copied. Yearly data tables are not copied because they belong to a different year.
+- q: Where do the peer examples come from?
+  a: From public Self-Study Reports of accredited institutions. Each excerpt shows the college, state, grade and page numbers. Only excerpts that the segmenter is confident belong to that metric are shown. Use them to understand the expected level of detail, never copy them.
